@@ -14,6 +14,10 @@ class ClientInvoice(Base, TimestampMixin):
     id: Mapped[int] = mapped_column(primary_key=True)
     invoice_number: Mapped[str] = mapped_column(String(60), unique=True, index=True)
     client_id: Mapped[int] = mapped_column(ForeignKey("clients.id"))
+    # Referral agent credited on this invoice (optional).
+    agent_id: Mapped[int | None] = mapped_column(
+        ForeignKey("agents.id", ondelete="SET NULL"), nullable=True
+    )
 
     invoice_date: Mapped[date] = mapped_column(Date)
     due_date: Mapped[date | None] = mapped_column(Date, nullable=True)
@@ -45,6 +49,7 @@ class ClientInvoice(Base, TimestampMixin):
     internal_remarks: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     client: Mapped["Client"] = relationship(back_populates="invoices")  # noqa: F821
+    agent: Mapped["Agent | None"] = relationship(back_populates="invoices")  # noqa: F821
     payments: Mapped[list["Payment"]] = relationship(
         back_populates="invoice", cascade="all, delete-orphan"
     )

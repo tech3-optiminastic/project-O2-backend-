@@ -8,6 +8,7 @@ from app.models.enums import InvoiceStatus, PaymentMode, GstStatus
 class InvoiceCreate(BaseModel):
     invoice_number: str | None = None  # auto-generated if omitted
     client_id: int
+    agent_id: int | None = None
     invoice_date: date
     due_date: date | None = None
     service_description: str | None = None
@@ -16,12 +17,14 @@ class InvoiceCreate(BaseModel):
     is_interstate: bool = False
     tds_applicable: bool = False
     tds_rate: float = 0.0
+    supporting_document: str | None = None
     internal_remarks: str | None = None
     status: InvoiceStatus = InvoiceStatus.DRAFT
 
 
 class InvoiceUpdate(BaseModel):
     client_id: int | None = None
+    agent_id: int | None = None
     invoice_date: date | None = None
     due_date: date | None = None
     service_description: str | None = None
@@ -30,6 +33,7 @@ class InvoiceUpdate(BaseModel):
     is_interstate: bool | None = None
     tds_applicable: bool | None = None
     tds_rate: float | None = None
+    supporting_document: str | None = None
     internal_remarks: str | None = None
     status: InvoiceStatus | None = None
 
@@ -42,6 +46,7 @@ class PaymentCreate(BaseModel):
     tds_deducted: float = 0.0
     gst_component: float = 0.0
     remarks: str | None = None
+    attachment: str | None = None
 
 
 class PaymentOut(PaymentCreate):
@@ -57,6 +62,7 @@ class InvoiceOut(BaseModel):
     id: int
     invoice_number: str
     client_id: int
+    agent_id: int | None
     invoice_date: date
     due_date: date | None
     service_description: str | None
@@ -77,6 +83,7 @@ class InvoiceOut(BaseModel):
     gst_status: GstStatus
     is_locked: bool
     locked_at: datetime | None
+    supporting_document: str | None
     internal_remarks: str | None
     created_at: datetime
 

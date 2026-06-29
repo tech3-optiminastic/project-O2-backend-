@@ -1,4 +1,4 @@
-from sqlalchemy import String, Text
+from sqlalchemy import String, Text, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
@@ -21,6 +21,12 @@ class Client(Base, TimestampMixin):
     category: Mapped[str | None] = mapped_column(String(80), nullable=True)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
 
+    # The referral agent who introduced this client (optional).
+    agent_id: Mapped[int | None] = mapped_column(
+        ForeignKey("agents.id", ondelete="SET NULL"), nullable=True
+    )
+
+    agent: Mapped["Agent | None"] = relationship(back_populates="clients")  # noqa: F821
     invoices: Mapped[list["ClientInvoice"]] = relationship(  # noqa: F821
         back_populates="client", cascade="all, delete-orphan"
     )

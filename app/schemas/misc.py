@@ -61,6 +61,10 @@ class ApprovalDecision(BaseModel):
     comment: str | None = None
 
 
+class PaymentRelease(BaseModel):
+    payment_reference: str
+
+
 class ApprovalActionOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -86,6 +90,7 @@ class ApprovalOut(BaseModel):
     status: ApprovalStatus
     cfo_comment: str | None
     ceo_comment: str | None
+    payment_reference: str | None
     released_at: datetime | None
     created_at: datetime
 

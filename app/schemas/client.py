@@ -13,6 +13,7 @@ class ClientBase(BaseModel):
     coi: str | None = None
     category: str | None = None
     notes: str | None = None
+    agent_id: int | None = None
 
 
 class ClientCreate(ClientBase):
@@ -29,6 +30,7 @@ class ClientUpdate(BaseModel):
     coi: str | None = None
     category: str | None = None
     notes: str | None = None
+    agent_id: int | None = None
 
 
 class ClientOut(ClientBase):

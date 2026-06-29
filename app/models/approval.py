@@ -30,6 +30,8 @@ class PaymentApproval(Base, TimestampMixin):
 
     cfo_comment: Mapped[str | None] = mapped_column(Text, nullable=True)
     ceo_comment: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # Bank transaction reference (UTR / txn id) of the actual payout — mandatory to release.
+    payment_reference: Mapped[str | None] = mapped_column(String(120), nullable=True)
     released_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     actions: Mapped[list["ApprovalAction"]] = relationship(

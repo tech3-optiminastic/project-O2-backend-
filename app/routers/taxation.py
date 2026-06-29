@@ -2,7 +2,8 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.core.deps import get_current_user
+from app.core.deps import require_roles
+from app.core.rbac import NON_EXEC
 from app.models import ClientInvoice, VendorInvoice, User, GstStatus
 from app.services.taxation import compute_gst, compute_tds
 
@@ -10,19 +11,19 @@ router = APIRouter(prefix="/taxation", tags=["taxation"])
 
 
 @router.get("/gst/preview")
-def gst_preview(taxable_value: float, gst_rate: float = 18.0, is_interstate: bool = False, user: User = Depends(get_current_user)):
+def gst_preview(taxable_value: float, gst_rate: float = 18.0, is_interstate: bool = False, user: User = Depends(require_roles(*NON_EXEC))):
     """Live GST calculator — used by the invoice form."""
     g = compute_gst(taxable_value, gst_rate, is_interstate)
     return g.__dict__
 
 
 @router.get("/tds/preview")
-def tds_preview(base_amount: float, tds_rate: float, applicable: bool = True, user: User = Depends(get_current_user)):
+def tds_preview(base_amount: float, tds_rate: float, applicable: bool = True, user: User = Depends(require_roles(*NON_EXEC))):
     return {"tds_amount": compute_tds(base_amount, tds_rate, applicable)}
 
 
 @router.get("/summary")
-def taxation_summary(db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+def taxation_summary(db: Session = Depends(get_db), user: User = Depends(require_roles(*NON_EXEC))):
     """GST + TDS pendency overview across all invoices."""
     client_invoices = db.query(ClientInvoice).all()
     vendor_invoices = db.query(VendorInvoice).all()
@@ -47,7 +48,7 @@ def taxation_summary(db: Session = Depends(get_db), user: User = Depends(get_cur
 
 
 @router.get("/gst/pending")
-def gst_pending(db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+def gst_pending(db: Session = Depends(get_db), user: User = Depends(require_roles(*NON_EXEC))):
     """Invoices whose GST is not yet reconciled."""
     rows = (
         db.query(ClientInvoice)

@@ -12,6 +12,7 @@ from app.core.security import hash_password
 from app.models import (
     User,
     UserRole,
+    Agent,
     Client,
     ClientInvoice,
     Payment,
@@ -61,16 +62,34 @@ def seed() -> None:
             users[role] = u
         db.flush()
 
+        # Referral agents (introduce clients and earn commission on their invoicing)
+        agents = [
+            Agent(business_name="Apex Referral Partners", legal_name="Apex Referral Partners LLP",
+                  contact_person="Rohan Mehta", email="deals@apexpartners.example", phone="+91 98330 70001",
+                  address="Lower Parel, Mumbai", gst_number="27AAPFA3333A1Z2", pan="AAPFA3333A",
+                  bank_account_holder="Apex Referral Partners LLP", bank_name="ICICI Bank",
+                  account_number="002701555888", ifsc_code="ICIC0000027", commission_rate=5.0,
+                  notes="Enterprise introductions."),
+            Agent(business_name="Bridgeway Associates", contact_person="Neha Gupta",
+                  email="hello@bridgeway.example", phone="+91 99870 80002", address="Sector 44, Gurugram",
+                  gst_number="06AAGFB4444B1Z8", pan="AAGFB4444B", bank_account_holder="Bridgeway Associates",
+                  bank_name="Axis Bank", account_number="911020099887766", ifsc_code="UTIB0000911",
+                  commission_rate=7.5),
+        ]
+        db.add_all(agents)
+        db.flush()
+
         # Clients
         clients = [
             Client(business_name="Northwind Capital", legal_name="Northwind Capital Pvt Ltd",
                    email="finance@northwind.example", phone="+91 98200 11001",
                    billing_address="Bandra Kurla Complex, Mumbai", gst_number="27AABCN1234A1Z5",
-                   coi="U65999MH2015PTC111111", category="Enterprise", notes="Quarterly retainer."),
+                   coi="U65999MH2015PTC111111", category="Enterprise", notes="Quarterly retainer.",
+                   agent_id=agents[0].id),
             Client(business_name="Vertex Logistics", legal_name="Vertex Logistics Ltd",
                    email="ap@vertex.example", phone="+91 99100 22002",
                    billing_address="Whitefield, Bengaluru", gst_number="29AABCV5678B1Z3",
-                   coi="U63030KA2018PLC222222", category="Mid-market"),
+                   coi="U63030KA2018PLC222222", category="Mid-market", agent_id=agents[1].id),
             Client(business_name="Halo SaaS", legal_name="Halo Software Inc",
                    email="billing@halo.example", phone="+91 90000 33003",
                    billing_address="HITEC City, Hyderabad", gst_number="36AAACH9012C1Z1",
@@ -84,7 +103,7 @@ def seed() -> None:
 
         def make_invoice(num, client, taxable, rate, interstate, tds_rate, status, gst_status, days_ago):
             inv = ClientInvoice(
-                invoice_number=num, client_id=client.id,
+                invoice_number=num, client_id=client.id, agent_id=client.agent_id,
                 invoice_date=today - timedelta(days=days_ago),
                 due_date=today - timedelta(days=days_ago) + timedelta(days=30),
                 service_description="Advisory & financial operations retainer",
@@ -163,10 +182,10 @@ def seed() -> None:
                                status=ApprovalStatus.PAYMENT_READY, cfo_comment="Within budget.", ceo_comment="Approved.")
         db.add(appr)
 
-        # A second approval awaiting CFO
+        # A second approval awaiting CEO sign-off
         appr2 = PaymentApproval(payee_name="Lumen Media", amount=90000, purpose="Creative production",
-                                tax_deductions=1800, net_payable=88200, requested_by_id=users[UserRole.FINANCE_EXECUTIVE].id,
-                                status=ApprovalStatus.SUBMITTED_CFO)
+                                tax_deductions=1800, net_payable=88200, requested_by_id=users[UserRole.FINANCE_MANAGER].id,
+                                status=ApprovalStatus.SUBMITTED_CEO)
         db.add(appr2)
         db.flush()
 

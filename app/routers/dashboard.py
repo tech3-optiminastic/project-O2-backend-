@@ -22,9 +22,7 @@ from app.schemas.misc import DashboardSummary
 router = APIRouter(prefix="/dashboard", tags=["dashboard"])
 
 PENDING_APPROVAL_STATES = {
-    ApprovalStatus.SUBMITTED_CFO,
     ApprovalStatus.SUBMITTED_CEO,
-    ApprovalStatus.CFO_APPROVED,
     ApprovalStatus.PAYMENT_READY,
 }
 

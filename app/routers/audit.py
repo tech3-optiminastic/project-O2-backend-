@@ -14,8 +14,8 @@ def list_audit(
     limit: int = Query(100, le=500),
     entity_type: str | None = None,
     db: Session = Depends(get_db),
-    # Audit trail is leadership-only.
-    user: User = Depends(require_roles(UserRole.ADMIN_CEO, UserRole.CFO, UserRole.FINANCE_MANAGER)),
+    # Audit trail is CEO-only.
+    user: User = Depends(require_roles(UserRole.ADMIN_CEO)),
 ):
     q = db.query(AuditLog)
     if entity_type:

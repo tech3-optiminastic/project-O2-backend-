@@ -8,6 +8,7 @@ from app.database import Base, engine
 import app.models  # noqa: F401  (register models on Base)
 from app.routers import (
     auth,
+    agents,
     clients,
     invoices,
     vendors,
@@ -47,7 +48,7 @@ app.add_middleware(
 )
 
 api = settings.api_v1_prefix
-for r in (auth, dashboard, clients, invoices, vendors, taxation, reports, approvals, verification, audit):
+for r in (auth, dashboard, agents, clients, invoices, vendors, taxation, reports, approvals, verification, audit):
     app.include_router(r.router, prefix=api)
 
 

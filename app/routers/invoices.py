@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.core.deps import get_current_user, require_roles
-from app.models import Client, ClientInvoice, Payment, User, UserRole, InvoiceStatus
+from app.models import Agent, Client, ClientInvoice, Payment, User, UserRole, InvoiceStatus
 from app.schemas.invoice import (
     InvoiceCreate,
     InvoiceUpdate,
@@ -28,7 +28,9 @@ def _apply_financials(inv: ClientInvoice) -> None:
     inv.cgst, inv.sgst, inv.igst = gst.cgst, gst.sgst, gst.igst
     inv.total_amount = gst.total
     inv.expected_tds = compute_tds(inv.taxable_value, inv.tds_rate, inv.tds_applicable)
-    if inv.amount_received <= 0:
+    # amount_received is None until the row is flushed (column default not yet applied),
+    # so coalesce before comparing.
+    if (inv.amount_received or 0) <= 0:
         inv.amount_pending = inv.total_amount
 
 
@@ -43,6 +45,7 @@ def list_invoices(
     search: str | None = Query(None),
     status: InvoiceStatus | None = Query(None),
     client_id: int | None = Query(None),
+    agent_id: int | None = Query(None),
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
@@ -54,6 +57,8 @@ def list_invoices(
         q = q.filter(ClientInvoice.status == status)
     if client_id:
         q = q.filter(ClientInvoice.client_id == client_id)
+    if agent_id:
+        q = q.filter(ClientInvoice.agent_id == agent_id)
     return q.order_by(ClientInvoice.created_at.desc()).all()
 
 
@@ -67,6 +72,8 @@ def create_invoice(
 ):
     if not db.get(Client, payload.client_id):
         raise HTTPException(404, "Client not found")
+    if payload.agent_id and not db.get(Agent, payload.agent_id):
+        raise HTTPException(404, "Agent not found")
     data = payload.model_dump()
     data["invoice_number"] = data.get("invoice_number") or _next_invoice_number(db)
     if db.query(ClientInvoice).filter(ClientInvoice.invoice_number == data["invoice_number"]).first():
@@ -101,6 +108,8 @@ def update_invoice(
         raise HTTPException(404, "Invoice not found")
 
     incoming = payload.model_dump(exclude_unset=True)
+    if incoming.get("agent_id") and not db.get(Agent, incoming["agent_id"]):
+        raise HTTPException(404, "Agent not found")
     # Enforce locking on critical financial fields (unless CEO override).
     violations = assert_editable(inv, incoming)
     if violations and user.role != UserRole.ADMIN_CEO:
@@ -178,6 +187,12 @@ def record_payment(
         raise HTTPException(400, "Cannot record payment on a draft or cancelled invoice")
     if payload.amount <= 0:
         raise HTTPException(400, "Payment amount must be positive")
+    remaining = round(inv.total_amount - (inv.amount_received or 0), 2)
+    if payload.amount > remaining + 0.01:
+        raise HTTPException(
+            400,
+            f"Payment of ₹{payload.amount:.2f} exceeds the pending amount of ₹{remaining:.2f}.",
+        )
 
     payment = Payment(invoice_id=inv.id, **payload.model_dump())
     db.add(payment)
