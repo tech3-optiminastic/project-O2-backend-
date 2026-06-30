@@ -30,6 +30,7 @@ class Settings(BaseSettings):
     smtp_password: str = ""
     smtp_from_email: str = ""
     smtp_from_name: str = "Project O2"
+    smtp_reply_to: str = ""
     smtp_use_tls: bool = True
     invite_expire_hours: int = 168  # 7 days
 

@@ -64,6 +64,8 @@ def send_invite_email(
     msg["Subject"] = subject
     msg["From"] = formataddr((settings.smtp_from_name, settings.smtp_from_email))
     msg["To"] = to_email
+    if settings.smtp_reply_to:
+        msg["Reply-To"] = settings.smtp_reply_to
     msg.set_content(text)
     msg.add_alternative(html, subtype="html")
 
